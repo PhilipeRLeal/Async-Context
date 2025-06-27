@@ -8,7 +8,7 @@ namespace AsyncContext
             InitializeComponent();
         }
 
-        private static void ReportThread()
+        private void ReportThread()
         {
             Debug.WriteLine($"Thread Id: {Environment.CurrentManagedThreadId}");
         }
@@ -29,12 +29,18 @@ namespace AsyncContext
 
             lbxList.Items.Add($"Found {count} BBCs");
 
-            static async Task<int> CallClient(HttpClient client)
+            async Task<int> CallClient(HttpClient client)
             {
-                var response = await client.GetAsync(new Uri("https://bbc.co.uk"))
-                                           .ConfigureAwait(false);
+                Debug.WriteLine($"Thread Id prior to await: {Environment.CurrentManagedThreadId}");
 
-                ReportThread();
+                var response = await client.GetAsync(new Uri("https://bbc.co.uk"))
+                                           .ConfigureAwait(true);
+                // if ConfigureAwait == true, 
+                // Then this continuation will be run in the context that was captured by the await.
+                // In our case, this captured context is the UI context (this can be checked by line 34, which depicts the same thread
+                // of the UI context (shown by line 22).
+                
+                Debug.WriteLine($"Thread Id after await: {Environment.CurrentManagedThreadId}");
 
                 int count = CountInstances(response.Content.ReadAsStream());
                 
